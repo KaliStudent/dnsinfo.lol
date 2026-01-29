@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DNS Intel | Lightning-Fast DNS Intelligence & Propagation Checker</title>
+  <meta name="description" content="Comprehensive DNS intelligence tool with zone health analysis, global propagation checking, subdomain enumeration, and WHOIS lookup.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&ampfamily=JetBrains+Mono:wght@400;500&ampdisplay=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <a href="/" class="logo">
+        <div class="logo-icon">🌐</div>
+        <div class="logo-text">DNS<span>Intel</span></div>
+      </a>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="/docs">API Docs</a>
+        <a href="/pricing#">Pricing</a>
+        <a href="/login#" class="nav-btn">Login</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="hero">
+      <div class="hero-badge">Lightning-Fast DNS Intelligence</div>
+      <h1>Analyze DNS in <span>Seconds</span> Not Minutes</h1>
+      <p class="hero-subtitle">
+        Get comprehensive DNS zone analysis, global propagation status, subdomain enumeration, and WHOIS data — all from a single query.
+      </p>
+      
+      <div class="search-container">
+        <div class="search-box">
+          <input 
+            type="text" 
+            id="domainInput" 
+            class="search-input" 
+            placeholder="Enter domain (e.g., example.com)"
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <button id="searchBtn" class="search-btn">
+            🔍 Scan Domain
+          </button>
+        </div>
+        <div class="rate-limit-info">
+          Free tier: <span id="rateLimit">3</span> lookups remaining
+        </div>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <h2 class="section-title">Comprehensive DNS Intelligence</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Lightning Fast Zone Display</h3>
+          <p>Pull complete DNS zone records in milliseconds using multiple DoH resolvers. Get A, AAAA, MX, TXT, NS, SOA, and more — all at once.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌍</div>
+          <h3>Global Propagation Check</h3>
+          <p>Verify DNS propagation across 7 major regions worldwide. See real-time status from Google, Cloudflare, Quad9, and more resolvers.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🏥</div>
+          <h3>Zone Health Analysis</h3>
+          <p>Identify misconfigurations in SOA, NS, MX, and TXT records. Get actionable recommendations to fix email deliverability and DNS issues.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔎</div>
+          <h3>Subdomain Enumeration</h3>
+          <p>Discover subdomains via Certificate Transparency logs and common subdomain lists. Check SSL status for each discovered subdomain.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <h3>WHOIS Intelligence</h3>
+          <p>Get registration details, expiration dates, and registrar info. Privacy-aware summaries when WHOIS protection is enabled.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔌</div>
+          <h3>RESTful API</h3>
+          <p>Integrate DNS intelligence into your workflows with our simple JSON API. Perfect for monitoring, security tools, and automation.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="results-container" id="results"></div>
+
+    <section class="pricing-preview" id="pricing">
+      <h2 class="section-title">Simple, Transparent Pricing</h2>
+      <p class="pricing-subtitle">Start with a 30-day free trial. No credit card required.</p>
+
+      <div class="pricing-preview-grid">
+        <div class="pricing-preview-card">
+          <h3>Free Trial</h3>
+          <div class="preview-price">$0 <span>for 30 days</span></div>
+          <p>Full API access, all features included</p>
+        </div>
+        <div class="pricing-preview-card">
+          <h3>Monthly</h3>
+          <div class="preview-price">$5 <span>/month</span></div>
+          <p>Unlimited requests, cancel anytime</p>
+        </div>
+        <div class="pricing-preview-card featured">
+          <div class="preview-badge">Best Value</div>
+          <h3>Quarterly</h3>
+          <div class="preview-price">$4 <span>/month</span></div>
+          <p>Save 20% - only $12/quarter</p>
+        </div>
+      </div>
+
+      <div class="pricing-cta">
+        <a href="/login?action=register" class="btn btn-primary">Start Free Trial</a>
+        <a href="/pricing" class="btn btn-secondary">View All Plans</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2024 DNS Intel. Built for IT professionals who need fast, reliable DNS intelligence.</p>
+    <p style="margin-top: 0.5rem;">
+      <a href="/docs" style="color: var(--accent-blue);">API Documentation</a> &bull;
+      <a href="/pricing" style="color: var(--accent-blue);">Pricing</a> &bull;
+      <a href="mailto:support@dnsinfo.lol" style="color: var(--accent-blue);">Contact</a>
+    </p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

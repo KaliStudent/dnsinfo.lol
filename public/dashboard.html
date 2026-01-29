@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | DNS Intel</title>
+  <meta name="description" content="Manage your DNS Intel API keys, subscription, and referrals.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <a href="/" class="logo">
+        <div class="logo-icon">🌐</div>
+        <div class="logo-text">DNS<span>Intel</span></div>
+      </a>
+      <nav>
+        <a href="/">Home</a>
+        <a href="/pricing">Pricing</a>
+        <a href="#" id="logoutBtn" class="nav-btn nav-btn-secondary">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <h1>Dashboard</h1>
+        <p id="welcomeMsg">Welcome back!</p>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="dashboard-loading">
+        <div class="loading-spinner"></div>
+        <p>Loading your dashboard...</p>
+      </div>
+
+      <!-- Not Logged In State -->
+      <div id="notLoggedIn" class="dashboard-card" style="display: none;">
+        <h2>Please Log In</h2>
+        <p>You need to be logged in to access your dashboard.</p>
+        <a href="/login" class="btn btn-primary">Login</a>
+      </div>
+
+      <!-- Dashboard Content -->
+      <div id="dashboardContent" style="display: none;">
+        <!-- Subscription Status -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h2>Subscription</h2>
+            <span id="subBadge" class="status-badge status-info">Loading...</span>
+          </div>
+          <div id="subscriptionInfo" class="sub-info">
+            <!-- Populated by JS -->
+          </div>
+          <div class="card-actions">
+            <button id="manageSubBtn" class="btn btn-secondary" style="display: none;">Manage Subscription</button>
+            <a href="/pricing" id="upgradeBtn" class="btn btn-primary" style="display: none;">Upgrade Now</a>
+          </div>
+        </div>
+
+        <!-- API Keys -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h2>API Keys</h2>
+            <button id="newKeyBtn" class="btn btn-small btn-primary">+ New Key</button>
+          </div>
+          <p class="card-desc">Use these keys to authenticate API requests. Keep them secret!</p>
+
+          <!-- New Key Display -->
+          <div id="newKeyDisplay" class="new-key-display" style="display: none;">
+            <div class="new-key-alert">
+              <strong>Save this key now!</strong> It won't be shown again.
+            </div>
+            <div class="key-value">
+              <code id="newKeyValue"></code>
+              <button class="copy-btn" onclick="copyNewKey()">Copy</button>
+            </div>
+          </div>
+
+          <div id="apiKeysList" class="api-keys-list">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Referral Program -->
+        <div class="dashboard-card">
+          <div class="card-header">
+            <h2>Referral Program</h2>
+            <span class="referral-reward">Earn 1 free month per referral!</span>
+          </div>
+          <div class="referral-code-box">
+            <span>Your referral code:</span>
+            <div class="referral-code">
+              <code id="referralCode">--------</code>
+              <button class="copy-btn" onclick="copyReferralCode()">Copy</button>
+            </div>
+          </div>
+          <div class="referral-link-box">
+            <span>Share this link:</span>
+            <div class="referral-link">
+              <code id="referralLink">https://dnsinfo.lol/login?ref=--------</code>
+              <button class="copy-btn" onclick="copyReferralLink()">Copy</button>
+            </div>
+          </div>
+          <div id="referralStats" class="referral-stats">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Credits -->
+        <div id="creditsCard" class="dashboard-card" style="display: none;">
+          <div class="card-header">
+            <h2>Free Credits</h2>
+          </div>
+          <p id="creditsInfo"></p>
+          <button id="applyCreditsBtn" class="btn btn-secondary">Apply Credits</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2024 DNS Intel. Built for IT professionals who need fast, reliable DNS intelligence.</p>
+  </footer>
+
+  <script>
+    let userData = null;
+
+    // Check for subscribe param
+    const params = new URLSearchParams(window.location.search);
+    const subscribePlan = params.get('subscribe');
+    const checkoutStatus = params.get('checkout');
+
+    // Show success message
+    if (checkoutStatus === 'success') {
+      showNotification('Subscription activated successfully!', 'success');
+    }
+
+    // Load user data
+    async function loadDashboard() {
+      try {
+        const response = await fetch('/auth/me', {
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('notLoggedIn').style.display = 'block';
+            return;
+          }
+          throw new Error('Failed to load dashboard');
+        }
+
+        userData = await response.json();
+        renderDashboard();
+
+        // Auto-subscribe if plan param exists
+        if (subscribePlan && !userData.subscription?.plan?.includes(subscribePlan)) {
+          subscribe(subscribePlan);
+        }
+      } catch (err) {
+        console.error('Dashboard error:', err);
+        showNotification('Failed to load dashboard. Please try again.', 'error');
+      }
+    }
+
+    function renderDashboard() {
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('dashboardContent').style.display = 'block';
+
+      // Welcome message
+      const name = userData.user.name || userData.user.email.split('@')[0];
+      document.getElementById('welcomeMsg').textContent = `Welcome back, ${name}!`;
+
+      // Subscription
+      renderSubscription();
+
+      // API Keys
+      renderApiKeys();
+
+      // Referral
+      renderReferral();
+
+      // Credits
+      renderCredits();
+    }
+
+    function renderSubscription() {
+      const sub = userData.subscription;
+      const badge = document.getElementById('subBadge');
+      const info = document.getElementById('subscriptionInfo');
+      const manageBtn = document.getElementById('manageSubBtn');
+      const upgradeBtn = document.getElementById('upgradeBtn');
+
+      if (!sub) {
+        badge.textContent = 'No Subscription';
+        badge.className = 'status-badge status-warning';
+        info.innerHTML = '<p>You don\'t have an active subscription. Subscribe to get unlimited API access!</p>';
+        upgradeBtn.style.display = 'inline-block';
+        manageBtn.style.display = 'none';
+        return;
+      }
+
+      const planNames = {
+        trial: 'Free Trial',
+        monthly: 'Monthly',
+        quarterly: 'Quarterly'
+      };
+
+      const statusClasses = {
+        active: 'status-success',
+        past_due: 'status-warning',
+        cancelled: 'status-error',
+        expired: 'status-error'
+      };
+
+      badge.textContent = sub.status.charAt(0).toUpperCase() + sub.status.slice(1);
+      badge.className = `status-badge ${statusClasses[sub.status] || 'status-info'}`;
+
+      const endDate = new Date(sub.current_period_end).toLocaleDateString();
+
+      info.innerHTML = `
+        <div class="sub-details">
+          <div class="sub-detail">
+            <span class="label">Plan</span>
+            <span class="value">${planNames[sub.plan] || sub.plan}</span>
+          </div>
+          <div class="sub-detail">
+            <span class="label">${sub.is_trial ? 'Trial Ends' : 'Renews'}</span>
+            <span class="value">${endDate}</span>
+          </div>
+          <div class="sub-detail">
+            <span class="label">Days Remaining</span>
+            <span class="value">${sub.days_remaining}</span>
+          </div>
+          ${sub.cancel_at_period_end ? '<div class="sub-warning">Subscription will not renew</div>' : ''}
+        </div>
+      `;
+
+      if (sub.is_trial) {
+        upgradeBtn.style.display = 'inline-block';
+        upgradeBtn.textContent = 'Subscribe Now';
+      } else {
+        manageBtn.style.display = 'inline-block';
+        upgradeBtn.style.display = 'none';
+      }
+    }
+
+    function renderApiKeys() {
+      const list = document.getElementById('apiKeysList');
+      const keys = userData.apiKeys || [];
+
+      if (keys.length === 0) {
+        list.innerHTML = '<p class="no-keys">No API keys yet. Create one to get started!</p>';
+        return;
+      }
+
+      list.innerHTML = keys.map(key => `
+        <div class="api-key-item ${key.is_active ? '' : 'inactive'}">
+          <div class="key-info">
+            <code class="key-prefix">${key.key_prefix}</code>
+            <span class="key-name">${key.name}</span>
+            ${!key.is_active ? '<span class="status-badge status-error">Revoked</span>' : ''}
+          </div>
+          <div class="key-meta">
+            <span>Created: ${new Date(key.created_at).toLocaleDateString()}</span>
+            ${key.last_used_at ? `<span>Last used: ${new Date(key.last_used_at).toLocaleDateString()}</span>` : ''}
+          </div>
+          <div class="key-actions">
+            ${key.is_active ? `<button class="btn btn-small btn-danger" onclick="revokeKey('${key.id}')">Revoke</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderReferral() {
+      const code = userData.referral?.code || '--------';
+      const stats = userData.referral?.stats || {};
+
+      document.getElementById('referralCode').textContent = code;
+      document.getElementById('referralLink').textContent = `https://dnsinfo.lol/login?ref=${code}`;
+
+      document.getElementById('referralStats').innerHTML = `
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-value">${stats.totalSignups || 0}</span>
+            <span class="stat-label">Signups</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">${stats.totalConversions || 0}</span>
+            <span class="stat-label">Subscribed</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">${stats.totalCreditsEarned || 0}</span>
+            <span class="stat-label">Months Earned</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCredits() {
+      const credits = userData.credits || 0;
+      const card = document.getElementById('creditsCard');
+
+      if (credits > 0) {
+        card.style.display = 'block';
+        document.getElementById('creditsInfo').textContent =
+          `You have ${credits} month(s) of free credit available!`;
+      }
+    }
+
+    // Actions
+    async function subscribe(plan) {
+      try {
+        const response = await fetch('/billing/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan }),
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to start checkout');
+        }
+
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } catch (err) {
+        showNotification(err.message, 'error');
+      }
+    }
+
+    document.getElementById('manageSubBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/billing/portal', {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to open billing portal');
+        }
+
+        window.location.href = data.url;
+      } catch (err) {
+        showNotification(err.message, 'error');
+      }
+    });
+
+    document.getElementById('newKeyBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/auth/api-keys', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: `API Key ${(userData.apiKeys?.length || 0) + 1}` }),
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to create API key');
+        }
+
+        // Show the new key
+        document.getElementById('newKeyValue').textContent = data.apiKey.key;
+        document.getElementById('newKeyDisplay').style.display = 'block';
+
+        // Reload dashboard
+        loadDashboard();
+      } catch (err) {
+        showNotification(err.message, 'error');
+      }
+    });
+
+    async function revokeKey(keyId) {
+      if (!confirm('Are you sure you want to revoke this API key? This cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/auth/api-keys/${keyId}`, {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || 'Failed to revoke key');
+        }
+
+        showNotification('API key revoked', 'success');
+        loadDashboard();
+      } catch (err) {
+        showNotification(err.message, 'error');
+      }
+    }
+
+    document.getElementById('applyCreditsBtn')?.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/billing/apply-credits', {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to apply credits');
+        }
+
+        showNotification(data.message, 'success');
+        loadDashboard();
+      } catch (err) {
+        showNotification(err.message, 'error');
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      try {
+        await fetch('/auth/logout', {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        window.location.href = '/';
+      } catch (err) {
+        window.location.href = '/';
+      }
+    });
+
+    // Copy functions
+    function copyNewKey() {
+      const key = document.getElementById('newKeyValue').textContent;
+      navigator.clipboard.writeText(key);
+      showNotification('API key copied!', 'success');
+    }
+
+    function copyReferralCode() {
+      const code = document.getElementById('referralCode').textContent;
+      navigator.clipboard.writeText(code);
+      showNotification('Referral code copied!', 'success');
+    }
+
+    function copyReferralLink() {
+      const link = document.getElementById('referralLink').textContent;
+      navigator.clipboard.writeText(link);
+      showNotification('Referral link copied!', 'success');
+    }
+
+    // Notification helper
+    function showNotification(message, type) {
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+
+    // Initialize
+    loadDashboard();
+  </script>
+</body>
+</html>
