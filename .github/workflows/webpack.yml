@@ -26,4 +26,4 @@ jobs:
       run: |
         npm install
         npx webpack
-        Y
+        webpack-cli
